@@ -1,7 +1,11 @@
 # CSC173 Activity 01 - Neural Network from Scratch
 
-**Date:** October 09, 2025  
-**Team:** [Group Name or Members]
+**Date:** October 22, 2025  
+**Team:** [Group CSC173
+	   Members:
+		Sistona, Lavigne
+		Garbanzos, Louise
+		Dadula, Bernard]
 
 ## Project Overview
 
@@ -12,7 +16,7 @@ The goal of this project is to understand the core mechanics of a neural network
 ## Data Preparation
 
 We used the Breast Cancer Wisconsin Diagnostic dataset from the UCI Machine Learning Repository
-.
+
 Each sample in the dataset describes characteristics of a breast mass and whether it is malignant (cancerous) or benign (non-cancerous).
 
 For this project, we only used two features to keep the neural network simple and easy to visualize:
@@ -74,17 +78,19 @@ The results show that even with only two input features and a small hidden layer
 
 Each member contributed to different components of the network:
 - Weight and bias initialization
-- Forward propagation coding
+	-Lavigne focused on designing and coding the initialization process for weights and biases, ensuring they were randomly and appropriately initialized to promote effective learning and prevent issues such as vanishing gradients.
+
 - Loss function implementation
-- Backpropagation and gradient computation
+	-Louise was responsible for defining and implementing the loss function, which measured the model's prediction errors. They ensured that the chosen loss function aligned with the dataset and overall training objectives.
+
 - Training loop and visualization
+	-While, I, Bernard, developed the training loop, integrating all components into an iterative process for updating parameters over multiple epochs. They also implemented visualization tools, such as loss curves and decision boundary plots, to track training progress and model performance.
 
 ## How to Run
 
 1. Clone the GitHub repository:
-   ```
-   git clone [repository_url]
-   ```
+   git clone https://github.com/Nard77/CSC173-GroupAssignment-1
+
 2. Open the Jupyter notebook or Colab file.
 3. Run all cells sequentially.
 4. Explore training loss plot and decision boundary visualizations.
@@ -93,4 +99,4 @@ Each member contributed to different components of the network:
 
 This activity provided hands-on experience in building a neural network from scratch using Python and NumPy. The group implemented data preprocessing, forward and backward propagation, and visualized the model’s learning progress. The project strengthened understanding of how neural networks learn and adapt through gradient-based optimization.
 
-Video: link
+Video: https://drive.google.com/file/d/1exhJZg0Pj5CPZdVdxY-naJSwT08K2BjZ/view?usp=sharing
