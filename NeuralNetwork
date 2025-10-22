@@ -1,0 +1,170 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ==========================================================
+# ACTIVATION FUNCTIONS
+# ==========================================================
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    s = sigmoid(x)
+    return s * (1 - s)
+
+def relu(x):
+    return np.maximum(0, x)
+
+def relu_derivative(x):
+    return (x > 0).astype(float)
+
+def tanh(x):
+    return np.tanh(x)
+
+def tanh_derivative(x):
+    return 1 - np.tanh(x) ** 2
+
+# ==========================================================
+# SIMPLE NEURAL NETWORK CLASS (2 → hidden → 1)
+# ==========================================================
+class NeuralNetwork:
+    def __init__(self, input_size, hidden_size=4, activation='tanh', lr=0.1):
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.output_size = 1
+        self.lr = lr
+
+        # Weight initialization
+        self.W1 = np.random.randn(input_size, hidden_size) * 0.1
+        self.b1 = np.zeros((1, hidden_size))
+        self.W2 = np.random.randn(hidden_size, self.output_size) * 0.1
+        self.b2 = np.zeros((1, self.output_size))
+
+        # Activation selection
+        if activation == 'relu':
+            self.activation = relu
+            self.activation_derivative = relu_derivative
+        elif activation == 'tanh':
+            self.activation = tanh
+            self.activation_derivative = tanh_derivative
+        else:
+            self.activation = sigmoid
+            self.activation_derivative = sigmoid_derivative
+
+    def forward(self, X):
+        self.Z1 = np.dot(X, self.W1) + self.b1
+        self.A1 = self.activation(self.Z1)
+        self.Z2 = np.dot(self.A1, self.W2) + self.b2
+        self.A2 = sigmoid(self.Z2)
+        return self.A2
+
+    def compute_loss(self, y_true, y_pred):
+        return np.mean((y_true - y_pred) ** 2)
+
+    def backward(self, X, y_true):
+        m = X.shape[0]
+        y_pred = self.forward(X)
+
+        # Output layer
+        dA2 = -(y_true - y_pred)
+        dZ2 = dA2 * sigmoid_derivative(self.Z2)
+        dW2 = np.dot(self.A1.T, dZ2) / m
+        db2 = np.sum(dZ2, axis=0, keepdims=True) / m
+
+        # Hidden layer
+        dA1 = np.dot(dZ2, self.W2.T)
+        dZ1 = dA1 * self.activation_derivative(self.Z1)
+        dW1 = np.dot(X.T, dZ1) / m
+        db1 = np.sum(dZ1, axis=0, keepdims=True) / m
+
+        # Gradient descent update
+        self.W1 -= self.lr * dW1
+        self.b1 -= self.lr * db1
+        self.W2 -= self.lr * dW2
+        self.b2 -= self.lr * db2
+
+        return self.compute_loss(y_true, y_pred)
+
+    def train(self, X, y, epochs=500):
+        losses = []
+        for i in range(epochs):
+            loss = self.backward(X, y)
+            losses.append(loss)
+            if i % 50 == 0:
+                print(f"Epoch {i}, Loss = {loss:.5f}")
+        return losses
+
+    def predict(self, X):
+        y_pred = self.forward(X)
+        return (y_pred >= 0.5).astype(int)
+
+# ==========================================================
+# LOAD & PREPROCESS BREAST CANCER DATASET
+# ==========================================================
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
+cols = ["id", "diagnosis"] + [f"feature_{i}" for i in range(1, 31)]
+data = pd.read_csv(url, header=None, names=cols)
+
+# Encode diagnosis: M = 1, B = 0
+data["diagnosis"] = data["diagnosis"].map({"M": 1, "B": 0})
+
+# Select 2 features for input layer
+X = data[["feature_1", "feature_2"]].values  # mean radius & mean texture
+y = data["diagnosis"].values.reshape(-1, 1)
+
+# Normalize features (manual standardization)
+X_mean = np.mean(X, axis=0)
+X_std = np.std(X, axis=0)
+X = (X - X_mean) / X_std
+
+# Train/Test Split (manual)
+np.random.seed(42)
+indices = np.arange(X.shape[0])
+np.random.shuffle(indices)
+split = int(0.8 * len(indices))
+train_idx, test_idx = indices[:split], indices[split:]
+X_train, X_test = X[train_idx], X[test_idx]
+y_train, y_test = y[train_idx], y[test_idx]
+
+# ==========================================================
+# TRAIN NETWORK
+# ==========================================================
+if __name__ == "__main__":
+    nn = NeuralNetwork(input_size=2, hidden_size=4, activation='tanh', lr=0.1)
+    losses = nn.train(X_train, y_train, epochs=500)
+
+    # Plot training loss
+    plt.plot(losses)
+    plt.title("Training Loss (MSE)")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.grid(True)
+    plt.show()
+
+    # Evaluate on test set
+    y_pred = nn.predict(X_test)
+    acc = np.mean(y_pred == y_test)
+    print(f"Test Accuracy: {acc:.4f}")
+
+    # Show a few predictions
+    print("\nSample Predictions:")
+    for i in range(5):
+        print(f"True: {int(y_test[i,0])}  |  Predicted: {int(y_pred[i,0])}")
+
+    # ======================================================
+    # DECISION BOUNDARY (Visualization)
+    # ======================================================
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 200),
+                         np.linspace(y_min, y_max, 200))
+    grid = np.c_[xx.ravel(), yy.ravel()]
+    Z = nn.predict(grid)
+    Z = Z.reshape(xx.shape)
+
+    plt.contourf(xx, yy, Z, alpha=0.3, cmap='RdBu')
+    plt.scatter(X_test[:, 0], X_test[:, 1], c=y_test.ravel(), cmap='bwr', edgecolors='k')
+    plt.title("Decision Boundary (Test Data)")
+    plt.xlabel("Feature 1 (Mean Radius)")
+    plt.ylabel("Feature 2 (Mean Texture)")
+    plt.show()
